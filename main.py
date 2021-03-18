@@ -2,6 +2,8 @@ import json
 from tkinter import Tk, Button, Label, StringVar, DISABLED
 from tkinter import filedialog
 
+INITIALDIR = '/home/ashum/projects/OTHER/kvazi'
+
 
 class MainWidow(object):
     def __init__(self):
@@ -27,7 +29,7 @@ class MainWidow(object):
 
     def load_file(self):
         f_types = [('JSON files', '*.json')]
-        filename = filedialog.askopenfilename(initialdir="/", title="Выберете файл", filetypes=f_types)
+        filename = filedialog.askopenfilename(initialdir=INITIALDIR, title="Выберете файл", filetypes=f_types)
 
         if filename:
             self.__read_file(filename)
