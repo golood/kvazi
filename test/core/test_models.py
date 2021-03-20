@@ -27,8 +27,8 @@ class TestData(unittest.TestCase):
         self.assertRaises(ValidationParamError, Data._validate_len_param, obj)
 
     def test_validate_comparison_operators(self):
-        self.assertIsNone(Data._validate_comparison_operators(['<', '<=', '>', '>=']))
-        self.assertRaises(ValidationParamError, Data._validate_comparison_operators, ['='])
+        self.assertIsNone(Data._validate_comparison_operators(['<', '<=', '>', '>=', '=']))
+        self.assertRaises(ValidationParamError, Data._validate_comparison_operators, ['=<'])
 
     def test_read_type(self):
         actual = Data.read_type('MIN')
