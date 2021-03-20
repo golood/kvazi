@@ -62,5 +62,5 @@ class Data(object):
     @staticmethod
     def _validate_comparison_operators(params):
         for index in range(len(params)):
-            if params[index] not in ['<', '<=', '>=', '>']:
+            if params[index] not in ['<', '<=', '>=', '>', '=']:
                 raise ValidationParamError('Unknown comparison operator: {}'.format(params[index]))
