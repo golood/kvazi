@@ -1,5 +1,5 @@
 import unittest
-from core.models import Data, TaskType
+from core.dto import Data, TaskType
 from core.exceptions import ValidationParamError, NotFoundParamError
 
 
