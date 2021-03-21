@@ -1,12 +1,18 @@
 import json
-from tkinter import Tk, Button, Label, StringVar, DISABLED
+from tkinter import Tk, Button, Label, StringVar, DISABLED, NORMAL
 from tkinter import filedialog
+from tkinter.messagebox import showerror
+from core.dto import Data
+from core.models import ModelData
+from core.exceptions import BusinessLogicException
 
 INITIALDIR = '/home/ashum/projects/OTHER/kvazi'
 
 
 class MainWidow(object):
-    def __init__(self):
+    def __init__(self, model_data: ModelData):
+        self.modelData = model_data
+
         self.root = Tk()
         self.root.title('Квази')
         self.root.geometry('600x300')
@@ -22,7 +28,7 @@ class MainWidow(object):
                                     state=DISABLED)
         self.btn_save_file.place(x=10, y=60)
 
-        self.btn_start = Button(self.root, text='Вычислить', state=DISABLED)
+        self.btn_start = Button(self.root, text='Вычислить', command=self.calculation, state=DISABLED)
         self.btn_start.place(x=10, y=120)
 
         self.root.mainloop()
@@ -34,15 +40,23 @@ class MainWidow(object):
         if filename:
             self.__read_file(filename)
 
+    def calculation(self):
+        pass
+
     def save_file(self):
         pass
 
-    @staticmethod
-    def __read_file(filename):
+    def __read_file(self, filename):
         with open(filename) as f:
-            data = json.load(f)
-        print(data)
+            _data = json.load(f)
+        try:
+            self.modelData.dataDTO = Data(_data)
+            self.var_name_var_load.set(filename)
+            self.btn_start.config(state=NORMAL)
+        except BusinessLogicException as err:
+            showerror(title='Ошибка', message=err)
+            print('Error:', err)
 
 
 if __name__ == '__main__':
-    window = MainWidow()
+    window = MainWidow(ModelData())
