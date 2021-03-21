@@ -4,38 +4,10 @@ from pulp.constants import LpMinimize, LpMaximize
 
 
 class LpSolve(object):
-    def __init__(self, data: Data):
-        self.c = data.c
-        self.x = None
-        self.vars = self._build_vars(len(data.c))
-        self.problem = self._build_problems(data.type)
-
-        self._build_problem_c()
-
-    @staticmethod
-    def _build_vars(count_var: int) -> dict:
-        _vars = dict()
-        for index in range(1, count_var + 1):
-            var_name = 'x{}'.format(index)
-            _vars.setdefault(var_name, LpVariable(var_name, lowBound=0))
-
-        return _vars
-
-    @staticmethod
-    def _build_problems(_type: TaskType) -> LpProblem:
-        if _type == TaskType.MIN:
-            return LpProblem('Задача_ЛП', LpMinimize)
-        if _type == TaskType.MAX:
-            return LpProblem('Задача_ЛП', LpMaximize)
-        raise TypeError
-
-    def _build_problem_c(self):
-        _params = []
-
-        for index in range(1, len(self.vars) + 1):
-            _params.append((self.get_var(index), self.c[index - 1],))
-
-        self.problem += LpAffineExpression(_params, name='Целевая_функция')
+    def __init__(self):
+        self.vars = None
+        self.problem = None
+        self.result = None
 
     def get_var(self, index: int):
         return self.vars.get('x{}'.format(index))
@@ -45,3 +17,61 @@ class LpSolve(object):
 
     def get_result(self) -> dict:
         pass
+
+
+class Builder(object):
+    def __init__(self):
+        self.lpSolve = LpSolve()
+
+    def build_lp_solve(self, data: Data) -> LpSolve:
+        self.build_vars(data)
+        self.build_problems(data)
+        self.build_problem_c(data)
+        self.build_problem_restrictions(data)
+
+        return self.lpSolve
+
+    def build_vars(self, data: Data):
+        _vars = dict()
+        for index in range(1, len(data.c) + 1):
+            var_name = 'x{}'.format(index)
+            _vars.setdefault(var_name, LpVariable(var_name, lowBound=0))
+
+        self.lpSolve.vars = _vars
+
+    def build_problems(self, data: Data):
+        if data.type == TaskType.MIN:
+            self.lpSolve.problem = LpProblem('Задача_ЛП', LpMinimize)
+            return
+        if data.type == TaskType.MAX:
+            self.lpSolve.problem = LpProblem('Задача_ЛП', LpMaximize)
+            return
+        raise TypeError
+
+    def build_problem_c(self, data: Data):
+        _params = []
+
+        for index in range(1, len(self.lpSolve.vars) + 1):
+            _params.append((self.lpSolve.get_var(index), data.c[index - 1],))
+
+        self.lpSolve.problem += LpAffineExpression(_params, name='Целевая_функция')
+
+    def build_problem_restrictions(self, data: Data):
+        for index_restriction in range(len(data.comparisonOperators)):
+            _params = []
+            for index in range(1, len(self.lpSolve.vars) + 1):
+                _params.append((self.lpSolve.get_var(index), data.restrictions[index_restriction][index - 1],))
+
+            self.create_restriction(
+                _params,
+                data.comparisonOperators[index_restriction],
+                data.b[index_restriction],
+                index_restriction)
+
+    def create_restriction(self, _params, operator, b, index):
+        if operator == '<=':
+            self.lpSolve.problem += LpAffineExpression(_params) <= b, str(index)
+        if operator == '>=':
+            self.lpSolve.problem += LpAffineExpression(_params) >= b, str(index)
+        if operator == '=':
+            self.lpSolve.problem += LpAffineExpression(_params) == b, str(index)
