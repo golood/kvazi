@@ -75,3 +75,10 @@ class Builder(object):
             self.lpSolve.problem += LpAffineExpression(_params) >= b, str(index)
         if operator == '=':
             self.lpSolve.problem += LpAffineExpression(_params) == b, str(index)
+
+
+class ModelData(object):
+    def __init__(self):
+        self.dataDTO = None
+        self.solve = None
+        self.solveKvazi = None
