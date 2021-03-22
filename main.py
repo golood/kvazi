@@ -3,7 +3,7 @@ from tkinter import Tk, Button, Label, StringVar, DISABLED, NORMAL
 from tkinter import filedialog
 from tkinter.messagebox import showerror
 from core.dto import Data
-from core.models import ModelData
+from core.models import ModelData, Builder
 from core.exceptions import BusinessLogicException
 
 INITIALDIR = '/home/ashum/projects/OTHER/kvazi'
@@ -41,7 +41,14 @@ class MainWidow(object):
             self.__read_file(filename)
 
     def calculation(self):
-        pass
+        builder = Builder()
+        self.modelData.solve = builder.build_lp_solve(self.modelData.dataDTO)
+        try:
+            self.modelData.solve.run()
+            self.btn_save_file.config(state=NORMAL)
+            # Todo вывести результаты решения на экран
+        except BaseException as err:
+            showerror(title='Ошибка', message=err)
 
     def save_file(self):
         pass
