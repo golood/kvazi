@@ -46,7 +46,8 @@ class MainWidow(object):
         try:
             self.modelData.solve.run()
             self.btn_save_file.config(state=NORMAL)
-            # Todo вывести результаты решения на экран
+            result = self.modelData.solve.get_result()
+            print(result)
         except BaseException as err:
             showerror(title='Ошибка', message=err)
 
