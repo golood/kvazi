@@ -1,5 +1,5 @@
 from core.dto import Data, TaskType
-from pulp import LpVariable, LpProblem, LpAffineExpression
+from pulp import LpVariable, LpProblem, LpAffineExpression, LpStatus, value
 from pulp.constants import LpMinimize, LpMaximize
 
 
@@ -13,10 +13,18 @@ class LpSolve(object):
         return self.vars.get('x{}'.format(index))
 
     def run(self):
-        self.problem.solve()
+        status = self.problem.solve()
+        print('Status:', LpStatus[status])
 
     def get_result(self) -> dict:
-        pass
+        x = {'c': None, 'var': {}}
+
+        variables = self.problem.variables()
+        for index in range(len(variables)):
+            x['var'].setdefault(variables[index].name, variables[index].varValue)
+
+        x['c'] = value(self.problem.objective)
+        return x
 
 
 class Builder(object):
