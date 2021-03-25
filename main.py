@@ -1,5 +1,5 @@
 import json
-from tkinter import Tk, Button, Label, StringVar, DISABLED, NORMAL
+from tkinter import Tk, Button, Label, StringVar, DISABLED, NORMAL, HIDDEN
 from tkinter import filedialog
 from tkinter.messagebox import showerror
 from core.dto import Data
@@ -31,6 +31,12 @@ class MainWidow(object):
         self.btn_start = Button(self.root, text='Вычислить', command=self.calculation, state=DISABLED)
         self.btn_start.place(x=10, y=120)
 
+        self.lb_title_result = Label(self.root, text='Результаты вычислений:', state=DISABLED)
+        self.lb_title_result.place(x=10, y=160)
+        self.var_body_result = StringVar()
+        self.lb_body_result = Label(self.root, textvariable=self.var_body_result, state=DISABLED)
+        self.lb_body_result.place(x=10, y=200)
+
         self.root.mainloop()
 
     def load_file(self):
@@ -40,6 +46,11 @@ class MainWidow(object):
         if filename:
             self.__read_file(filename)
 
+            self.var_body_result.set('')
+            self.lb_title_result.config(state=DISABLED)
+            self.btn_save_file.config(state=DISABLED)
+            self.modelData.solve = None
+
     def calculation(self):
         builder = Builder()
         self.modelData.solve = builder.build_lp_solve(self.modelData.dataDTO)
@@ -47,7 +58,7 @@ class MainWidow(object):
             self.modelData.solve.run()
             self.btn_save_file.config(state=NORMAL)
             result = self.modelData.solve.get_result()
-            print(result)
+            self.show_result(result)
         except BaseException as err:
             showerror(title='Ошибка', message=err)
 
@@ -64,6 +75,21 @@ class MainWidow(object):
         except BusinessLogicException as err:
             showerror(title='Ошибка', message=err)
             print('Error:', err)
+
+    def show_result(self, result):
+        self.lb_title_result.config(state=NORMAL)
+        self.lb_body_result.config(state=NORMAL)
+
+        s = 'Значение целевой функции: {}\n'.format(result['c'])
+        count = 0
+        for item in result['var']:
+            s += '{} = {}, '.format(item, result['var'][item])
+            if count == 5:  # Выводим в строке по 5 переменных
+                s += '\n'
+                count = 0
+                continue
+            count += 1
+        self.var_body_result.set(s)
 
 
 if __name__ == '__main__':
