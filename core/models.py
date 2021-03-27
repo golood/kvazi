@@ -125,7 +125,7 @@ class BuilderLpKvazi(Builder):
 
     @staticmethod
     def build_problems(lp_solve: LpSolve, data: Data):
-        pass
+        lp_solve.problem = LpProblem('Задача_ЛП', LpMinimize)
 
     @staticmethod
     def build_problem_c(lp_solve: LpSolve, data: Data):
