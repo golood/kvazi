@@ -57,8 +57,18 @@ class Builder(object):
     def build_problem_c(lp_solve: LpSolve, data: Data):
         pass
 
-    def build_problem_restrictions(self, lp_solve: LpSolve, data: Data):
+    @staticmethod
+    def build_problem_restrictions(lp_solve: LpSolve, data: Data):
         pass
+
+    @staticmethod
+    def create_restriction(lp_solve: LpSolve, _params, operator, b, index):
+        if operator == '<=':
+            lp_solve.problem += LpAffineExpression(_params) <= b, str(index)
+        if operator == '>=':
+            lp_solve.problem += LpAffineExpression(_params) >= b, str(index)
+        if operator == '=':
+            lp_solve.problem += LpAffineExpression(_params) == b, str(index)
 
 
 class BuilderLp(Builder):
@@ -91,27 +101,19 @@ class BuilderLp(Builder):
 
         lp_solve.problem += LpAffineExpression(_params, name='Целевая_функция')
 
-    def build_problem_restrictions(self, lp_solve: LpSolve, data: Data):
+    @staticmethod
+    def build_problem_restrictions(lp_solve: LpSolve, data: Data):
         for index_restriction in range(len(data.comparisonOperators)):
             _params = []
             for index in range(1, len(lp_solve.vars) + 1):
                 _params.append((lp_solve.get_var(index), data.restrictions[index_restriction][index - 1],))
 
-            self.create_restriction(
+            Builder.create_restriction(
                 lp_solve,
                 _params,
                 data.comparisonOperators[index_restriction],
                 data.b[index_restriction],
                 index_restriction)
-
-    @staticmethod
-    def create_restriction(lp_solve: LpSolve, _params, operator, b, index):
-        if operator == '<=':
-            lp_solve.problem += LpAffineExpression(_params) <= b, str(index)
-        if operator == '>=':
-            lp_solve.problem += LpAffineExpression(_params) >= b, str(index)
-        if operator == '=':
-            lp_solve.problem += LpAffineExpression(_params) == b, str(index)
 
 
 class BuilderLpKvazi(Builder):
@@ -139,8 +141,33 @@ class BuilderLpKvazi(Builder):
 
         lp_solve.problem += LpAffineExpression(_params, name='Целевая_функция')
 
-    def build_problem_restrictions(self, lp_solve: LpSolve, data: Data):
-        pass
+    @staticmethod
+    def build_problem_restrictions(lp_solve: LpSolve, data: Data):
+        index_kvazi_var = len(data.c) + 1
+
+        for index_restriction in range(len(data.comparisonOperators)):
+            _params = []
+            for index in range(1, len(data.c) + 1):
+                _params.append((lp_solve.get_var(index), data.restrictions[index_restriction][index - 1],))
+
+            if data.comparisonOperators[index_restriction] == '>=':
+                _params.append((lp_solve.get_var(index_kvazi_var), 1,))
+                index_kvazi_var += 1
+            if data.comparisonOperators[index_restriction] == '<=':
+                _params.append((lp_solve.get_var(index_kvazi_var), -1,))
+                index_kvazi_var += 1
+            if data.comparisonOperators[index_restriction] == '=':
+                _params.append((lp_solve.get_var(index_kvazi_var), 1,))
+                index_kvazi_var += 1
+                _params.append((lp_solve.get_var(index_kvazi_var), -1,))
+                index_kvazi_var += 1
+
+            Builder.create_restriction(
+                lp_solve,
+                _params,
+                data.comparisonOperators[index_restriction],
+                data.b[index_restriction],
+                index_restriction)
 
     @staticmethod
     def _get_count_var(data: Data) -> int:
@@ -161,7 +188,7 @@ class ModelData(object):
         self.solve = None
         self.solveKvazi = None
 
-    def solve_task(self):
+    def solve_task(self) -> bool:
         builder = BuilderLp()
         self.solve = builder.build_lp(self.dataDTO)
 
@@ -172,10 +199,17 @@ class ModelData(object):
             self.solve = None
             builder = BuilderLpKvazi()
             self.solveKvazi = builder.build_lp(self.dataDTO)
+            success = self.solveKvazi.run()
 
-            return
+            if success:
+                print("Квазирешение успешно найдено.")
+                return True
+
+            print("Не удалось найти квазирешение.")
+            return False
 
         print("Решение успешно найдено.")
+        return True
 
     def get_result(self):
         if self.solve is not None:
