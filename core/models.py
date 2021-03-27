@@ -1,9 +1,14 @@
+from abc import ABC, abstractmethod
 from core.dto import Data, TaskType
 from pulp import LpVariable, LpProblem, LpAffineExpression, LpStatus, value
 from pulp.constants import LpMinimize, LpMaximize
 
 
 class LpSolve(object):
+    """
+    Задача линейного программирования.
+    """
+
     def __init__(self):
         self.vars = None
         self.problem = None
@@ -27,15 +32,28 @@ class LpSolve(object):
         return x
 
     @staticmethod
-    def is_status_optimal(status):
+    def is_status_optimal(status) -> bool:
+        """
+        Проверяет статус решения задачи ЛП.
+        :return: True - в случае успешного решения задачи.
+                 False - в случае, когда не удалось решить задачу ЛП.
+        """
+
         if status == "Optimal":
             return True
         return False
 
 
-class Builder(object):
+class Builder(ABC):
+    """
+    Строитель задачи ЛП.
+    """
 
     def build_lp(self, data: Data) -> LpSolve:
+        """
+        Шаблонный метод для создания задачи ЛП.
+        """
+
         lp_solve = LpSolve()
 
         self.build_vars(lp_solve, data)
@@ -46,23 +64,48 @@ class Builder(object):
         return lp_solve
 
     @staticmethod
+    @abstractmethod
     def build_vars(lp_solve: LpSolve, data: Data):
+        """
+        Создаёт переменные для задачи ЛП.
+        """
         pass
 
     @staticmethod
+    @abstractmethod
     def build_problems(lp_solve: LpSolve, data: Data):
+        """
+        Создаёт задачу ЛП на поиск минимума или максимума.
+        """
         pass
 
     @staticmethod
+    @abstractmethod
     def build_problem_c(lp_solve: LpSolve, data: Data):
+        """
+        Создаёт целевую функцию задачи ЛП.
+        """
         pass
 
     @staticmethod
+    @abstractmethod
     def build_problem_restrictions(lp_solve: LpSolve, data: Data):
+        """
+        Создаёт ограничения для задачи ЛП.
+        """
         pass
 
     @staticmethod
-    def create_restriction(lp_solve: LpSolve, _params, operator, b, index):
+    def create_restriction(lp_solve: LpSolve, _params: list, operator: str, b, index):
+        """
+        Вспомогательная функция для создания ограничения.
+        :param lp_solve: задача ЛП.
+        :param _params: массив параметров ограничения.
+        :param operator: оператор сравнения ограничения.
+        :param b: числовое значение правой части ограничения.
+        :param index: порядковый номер ограничений.
+        """
+
         if operator == '<=':
             lp_solve.problem += LpAffineExpression(_params) <= b, str(index)
         if operator == '>=':
@@ -72,6 +115,9 @@ class Builder(object):
 
 
 class BuilderLp(Builder):
+    """
+    Строитель задачи ЛП.
+    """
 
     @staticmethod
     def build_vars(lp_solve: LpSolve, data: Data):
@@ -117,6 +163,9 @@ class BuilderLp(Builder):
 
 
 class BuilderLpKvazi(Builder):
+    """
+    Строитель задачи ЛП для поиска квазирешения.
+    """
 
     @staticmethod
     def build_vars(lp_solve: LpSolve, data: Data):
@@ -171,6 +220,10 @@ class BuilderLpKvazi(Builder):
 
     @staticmethod
     def _get_count_var(data: Data) -> int:
+        """
+        Получает количество переменных для задачи ЛП.
+        """
+
         count = len(data.c)
 
         for item in data.comparisonOperators:
@@ -183,12 +236,22 @@ class BuilderLpKvazi(Builder):
 
 
 class ModelData(object):
+    """
+    Модель данных.
+    """
+
     def __init__(self):
         self.dataDTO = None
         self.solve = None
         self.solveKvazi = None
 
     def solve_task(self) -> bool:
+        """
+        Решение задачи ЛП.
+        :return True - в случае, если удалось найти решение или квазирешение задачи ЛП.
+                False - в случае, если не удалось найти решение и квазирешение задачи ЛП.
+        """
+
         builder = BuilderLp()
         self.solve = builder.build_lp(self.dataDTO)
 
@@ -212,6 +275,10 @@ class ModelData(object):
         return True
 
     def get_result(self):
+        """
+        Получает результаты решения задачи ЛП.
+        """
+
         if self.solve is not None:
             return self.solve.get_result()
         if self.solveKvazi is not None:
