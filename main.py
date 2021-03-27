@@ -1,7 +1,7 @@
 import json
 from tkinter import Tk, Button, Label, StringVar, DISABLED, NORMAL
 from tkinter import filedialog
-from tkinter.messagebox import showerror
+from tkinter.messagebox import showerror, showwarning
 from core.dto import Data
 from core.models import ModelData
 from core.exceptions import BusinessLogicException
@@ -53,7 +53,11 @@ class MainWidow(object):
 
     def calculation(self):
         try:
-            self.modelData.solve_task()
+            success = self.modelData.solve_task()
+            if not success:
+                showwarning(title='Внимание!', message='Не удалось найти квазирешение!')
+                return
+
             result = self.modelData.get_result()
 
             self.btn_save_file.config(state=NORMAL)
@@ -81,12 +85,12 @@ class MainWidow(object):
         self.lb_body_result.config(state=NORMAL)
 
         s = 'Значение целевой функции: {}\n'.format(result['c'])
-        count = 0
+        count = 1
         for item in result['var']:
             s += '{} = {}, '.format(item, result['var'][item])
             if count == 5:  # Выводим в строке по 5 переменных
                 s += '\n'
-                count = 0
+                count = 1
                 continue
             count += 1
         self.var_body_result.set(s)
