@@ -14,7 +14,7 @@ class LpSolve(object):
 
     def run(self):
         status = self.problem.solve()
-        print('Status:', LpStatus[status])
+        return self.is_status_optimal(LpStatus[status])
 
     def get_result(self) -> dict:
         x = {'c': None, 'var': {}}
@@ -26,63 +26,74 @@ class LpSolve(object):
         x['c'] = value(self.problem.objective)
         return x
 
+    @staticmethod
+    def is_status_optimal(status):
+        if status == "Optimal":
+            return True
+        return False
+
 
 class Builder(object):
-    def __init__(self):
-        self.lpSolve = LpSolve()
 
     def build_lp_solve(self, data: Data) -> LpSolve:
-        self.build_vars(data)
-        self.build_problems(data)
-        self.build_problem_c(data)
-        self.build_problem_restrictions(data)
+        lp_solve = LpSolve()
 
-        return self.lpSolve
+        self.build_vars(lp_solve, data)
+        self.build_problems(lp_solve, data)
+        self.build_problem_c(lp_solve, data)
+        self.build_problem_restrictions(lp_solve, data)
 
-    def build_vars(self, data: Data):
+        return lp_solve
+
+    @staticmethod
+    def build_vars(lp_solve: LpSolve, data: Data):
         _vars = dict()
         for index in range(1, len(data.c) + 1):
             var_name = 'x{}'.format(index)
             _vars.setdefault(var_name, LpVariable(var_name, lowBound=0))
 
-        self.lpSolve.vars = _vars
+        lp_solve.vars = _vars
 
-    def build_problems(self, data: Data):
+    @staticmethod
+    def build_problems(lp_solve: LpSolve, data: Data):
         if data.type == TaskType.MIN:
-            self.lpSolve.problem = LpProblem('Задача_ЛП', LpMinimize)
+            lp_solve.problem = LpProblem('Задача_ЛП', LpMinimize)
             return
         if data.type == TaskType.MAX:
-            self.lpSolve.problem = LpProblem('Задача_ЛП', LpMaximize)
+            lp_solve.problem = LpProblem('Задача_ЛП', LpMaximize)
             return
         raise TypeError
 
-    def build_problem_c(self, data: Data):
+    @staticmethod
+    def build_problem_c(lp_solve: LpSolve, data: Data):
         _params = []
 
-        for index in range(1, len(self.lpSolve.vars) + 1):
-            _params.append((self.lpSolve.get_var(index), data.c[index - 1],))
+        for index in range(1, len(lp_solve.vars) + 1):
+            _params.append((lp_solve.get_var(index), data.c[index - 1],))
 
-        self.lpSolve.problem += LpAffineExpression(_params, name='Целевая_функция')
+        lp_solve.problem += LpAffineExpression(_params, name='Целевая_функция')
 
-    def build_problem_restrictions(self, data: Data):
+    def build_problem_restrictions(self, lp_solve: LpSolve, data: Data):
         for index_restriction in range(len(data.comparisonOperators)):
             _params = []
-            for index in range(1, len(self.lpSolve.vars) + 1):
-                _params.append((self.lpSolve.get_var(index), data.restrictions[index_restriction][index - 1],))
+            for index in range(1, len(lp_solve.vars) + 1):
+                _params.append((lp_solve.get_var(index), data.restrictions[index_restriction][index - 1],))
 
             self.create_restriction(
+                lp_solve,
                 _params,
                 data.comparisonOperators[index_restriction],
                 data.b[index_restriction],
                 index_restriction)
 
-    def create_restriction(self, _params, operator, b, index):
+    @staticmethod
+    def create_restriction(lp_solve: LpSolve, _params, operator, b, index):
         if operator == '<=':
-            self.lpSolve.problem += LpAffineExpression(_params) <= b, str(index)
+            lp_solve.problem += LpAffineExpression(_params) <= b, str(index)
         if operator == '>=':
-            self.lpSolve.problem += LpAffineExpression(_params) >= b, str(index)
+            lp_solve.problem += LpAffineExpression(_params) >= b, str(index)
         if operator == '=':
-            self.lpSolve.problem += LpAffineExpression(_params) == b, str(index)
+            lp_solve.problem += LpAffineExpression(_params) == b, str(index)
 
 
 class ModelData(object):
@@ -90,3 +101,23 @@ class ModelData(object):
         self.dataDTO = None
         self.solve = None
         self.solveKvazi = None
+
+    def solve_task(self):
+        builder = Builder()
+        self.solve = builder.build_lp_solve(self.dataDTO)
+
+        success = self.solve.run()
+
+        if not success:
+            self.solve = None
+            print("Решение не найдено, идёт поиск квазирешения.")
+
+        print("Решение успешно найдено.")
+
+    def get_result(self):
+        if self.solve is not None:
+            return self.solve.get_result()
+        if self.solveKvazi is not None:
+            return self.solveKvazi.get_result()
+
+        return None
