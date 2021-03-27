@@ -6,7 +6,8 @@ from core.dto import Data
 from core.models import ModelData
 from core.exceptions import BusinessLogicException
 
-INITIALDIR = '/home/ashum/projects/OTHER/kvazi'
+
+F_TYPES = [('JSON files', '*.json')]
 
 
 class MainWidow(object):
@@ -40,8 +41,7 @@ class MainWidow(object):
         self.root.mainloop()
 
     def load_file(self):
-        f_types = [('JSON files', '*.json')]
-        filename = filedialog.askopenfilename(initialdir=INITIALDIR, title="Выберете файл", filetypes=f_types)
+        filename = filedialog.askopenfilename(filetypes=F_TYPES)
 
         if filename:
             self.__read_file(filename)
@@ -67,7 +67,12 @@ class MainWidow(object):
             showerror(title='Ошибка', message=err)
 
     def save_file(self):
-        pass
+        file = filedialog.asksaveasfile(mode='w', defaultextension='.json', filetypes=F_TYPES)
+        if file is None:
+            return
+
+        file.write(str(json.dumps(self.modelData.get_result())))
+        file.close()
 
     def __read_file(self, filename):
         with open(filename) as f:
