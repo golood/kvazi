@@ -1,9 +1,9 @@
 import json
-from tkinter import Tk, Button, Label, StringVar, DISABLED, NORMAL, HIDDEN
+from tkinter import Tk, Button, Label, StringVar, DISABLED, NORMAL
 from tkinter import filedialog
 from tkinter.messagebox import showerror
 from core.dto import Data
-from core.models import ModelData, Builder
+from core.models import ModelData
 from core.exceptions import BusinessLogicException
 
 INITIALDIR = '/home/ashum/projects/OTHER/kvazi'
@@ -52,14 +52,14 @@ class MainWidow(object):
             self.modelData.solve = None
 
     def calculation(self):
-        builder = Builder()
-        self.modelData.solve = builder.build_lp_solve(self.modelData.dataDTO)
         try:
-            self.modelData.solve.run()
+            self.modelData.solve_task()
+            result = self.modelData.get_result()
+
             self.btn_save_file.config(state=NORMAL)
-            result = self.modelData.solve.get_result()
             self.show_result(result)
         except BaseException as err:
+            print(err)
             showerror(title='Ошибка', message=err)
 
     def save_file(self):
