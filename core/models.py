@@ -45,7 +45,8 @@ class Builder(object):
 
         return lp_solve
 
-    def build_vars(self, lp_solve: LpSolve, data: Data):
+    @staticmethod
+    def build_vars(lp_solve: LpSolve, data: Data):
         pass
 
     @staticmethod
@@ -62,7 +63,8 @@ class Builder(object):
 
 class BuilderLp(Builder):
 
-    def build_vars(self, lp_solve: LpSolve, data: Data):
+    @staticmethod
+    def build_vars(lp_solve: LpSolve, data: Data):
         _vars = dict()
         for index in range(1, len(data.c) + 1):
             var_name = 'x{}'.format(index)
@@ -114,10 +116,11 @@ class BuilderLp(Builder):
 
 class BuilderLpKvazi(Builder):
 
-    def build_vars(self, lp_solve: LpSolve, data: Data):
+    @staticmethod
+    def build_vars(lp_solve: LpSolve, data: Data):
         _vars = dict()
 
-        for index in range(1, self._get_count_var(data) + 1):
+        for index in range(1, BuilderLpKvazi._get_count_var(data) + 1):
             var_name = 'x{}'.format(index)
             _vars.setdefault(var_name, LpVariable(var_name, lowBound=0))
 
@@ -129,7 +132,12 @@ class BuilderLpKvazi(Builder):
 
     @staticmethod
     def build_problem_c(lp_solve: LpSolve, data: Data):
-        pass
+        _params = []
+
+        for index in range(len(data.c) + 1, BuilderLpKvazi._get_count_var(data) + 1):
+            _params.append((lp_solve.get_var(index), 1,))
+
+        lp_solve.problem += LpAffineExpression(_params, name='Целевая_функция')
 
     def build_problem_restrictions(self, lp_solve: LpSolve, data: Data):
         pass
