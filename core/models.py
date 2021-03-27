@@ -35,7 +35,7 @@ class LpSolve(object):
 
 class Builder(object):
 
-    def build_lp_solve(self, data: Data) -> LpSolve:
+    def build_lp(self, data: Data) -> LpSolve:
         lp_solve = LpSolve()
 
         self.build_vars(lp_solve, data)
@@ -45,6 +45,23 @@ class Builder(object):
 
         return lp_solve
 
+    @staticmethod
+    def build_vars(lp_solve: LpSolve, data: Data):
+        pass
+
+    @staticmethod
+    def build_problems(lp_solve: LpSolve, data: Data):
+        pass
+
+    @staticmethod
+    def build_problem_c(lp_solve: LpSolve, data: Data):
+        pass
+
+    def build_problem_restrictions(self, lp_solve: LpSolve, data: Data):
+        pass
+
+
+class BuilderLp(Builder):
     @staticmethod
     def build_vars(lp_solve: LpSolve, data: Data):
         _vars = dict()
@@ -96,6 +113,23 @@ class Builder(object):
             lp_solve.problem += LpAffineExpression(_params) == b, str(index)
 
 
+class BuilderLpKvazi(Builder):
+    @staticmethod
+    def build_vars(lp_solve: LpSolve, data: Data):
+        pass
+
+    @staticmethod
+    def build_problems(lp_solve: LpSolve, data: Data):
+        pass
+
+    @staticmethod
+    def build_problem_c(lp_solve: LpSolve, data: Data):
+        pass
+
+    def build_problem_restrictions(self, lp_solve: LpSolve, data: Data):
+        pass
+
+
 class ModelData(object):
     def __init__(self):
         self.dataDTO = None
@@ -103,14 +137,17 @@ class ModelData(object):
         self.solveKvazi = None
 
     def solve_task(self):
-        builder = Builder()
-        self.solve = builder.build_lp_solve(self.dataDTO)
+        builder = BuilderLp()
+        self.solve = builder.build_lp(self.dataDTO)
 
         success = self.solve.run()
 
         if not success:
-            self.solve = None
             print("Решение не найдено, идёт поиск квазирешения.")
+            self.solve = None
+            builder = BuilderLpKvazi()
+
+            return
 
         print("Решение успешно найдено.")
 
