@@ -11,6 +11,10 @@ F_TYPES = [('JSON files', '*.json')]
 
 
 class MainWidow(object):
+    """
+    Главное окно.
+    """
+
     def __init__(self, model_data: ModelData):
         self.modelData = model_data
 
@@ -75,6 +79,10 @@ class MainWidow(object):
         file.close()
 
     def __read_file(self, filename):
+        """
+        Читает файл с исходными данными.
+        """
+
         with open(filename) as f:
             _data = json.load(f)
         try:
