@@ -45,8 +45,7 @@ class Builder(object):
 
         return lp_solve
 
-    @staticmethod
-    def build_vars(lp_solve: LpSolve, data: Data):
+    def build_vars(self, lp_solve: LpSolve, data: Data):
         pass
 
     @staticmethod
@@ -62,8 +61,8 @@ class Builder(object):
 
 
 class BuilderLp(Builder):
-    @staticmethod
-    def build_vars(lp_solve: LpSolve, data: Data):
+
+    def build_vars(self, lp_solve: LpSolve, data: Data):
         _vars = dict()
         for index in range(1, len(data.c) + 1):
             var_name = 'x{}'.format(index)
@@ -114,9 +113,15 @@ class BuilderLp(Builder):
 
 
 class BuilderLpKvazi(Builder):
-    @staticmethod
-    def build_vars(lp_solve: LpSolve, data: Data):
-        pass
+
+    def build_vars(self, lp_solve: LpSolve, data: Data):
+        _vars = dict()
+
+        for index in range(1, self._get_count_var(data) + 1):
+            var_name = 'x{}'.format(index)
+            _vars.setdefault(var_name, LpVariable(var_name, lowBound=0))
+
+        lp_solve.vars = _vars
 
     @staticmethod
     def build_problems(lp_solve: LpSolve, data: Data):
@@ -128,6 +133,18 @@ class BuilderLpKvazi(Builder):
 
     def build_problem_restrictions(self, lp_solve: LpSolve, data: Data):
         pass
+
+    @staticmethod
+    def _get_count_var(data: Data) -> int:
+        count = len(data.c)
+
+        for item in data.comparisonOperators:
+            if item == '=':
+                count += 2
+            else:
+                count += 1
+
+        return count
 
 
 class ModelData(object):
@@ -146,6 +163,7 @@ class ModelData(object):
             print("Решение не найдено, идёт поиск квазирешения.")
             self.solve = None
             builder = BuilderLpKvazi()
+            self.solveKvazi = builder.build_lp(self.dataDTO)
 
             return
 
